@@ -32,7 +32,9 @@ class JustRAIGSDataset(Dataset):
             with open(os.path.join(data_folder, 'test_images.json'), 'r') as j:
                 self.images = json.load(j)
         self.load_ground_truths()
-        print(f'Loaded {len(self.images)} {self.stage} images')
+        true_gt = [self.ground_truths[os.path.splitext(os.path.basename(image))[0]] for image in self.images].count(1)
+        false_gt = len(self.images) - true_gt
+        print(f'Loaded {len(self.images)} {self.stage} images\tTrue: {true_gt}\tFalse: {false_gt}')
 
     def load_ground_truths(self):
         df = pd.read_csv(os.path.join(

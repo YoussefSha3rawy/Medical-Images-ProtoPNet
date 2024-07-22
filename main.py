@@ -15,6 +15,8 @@ from ProtoPNet import model, push, prune, train_and_test as tnt, save
 from ProtoPNet.log import create_logger
 from ProtoPNet.preprocess import mean, std, preprocess_input_function
 
+from logger import WandbLogger
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-gpuid', nargs=1, type=str, default='0') # python3 main.py -gpuid=0,1,2,3
@@ -40,6 +42,8 @@ def main():
     shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', 'train_and_test.py'), dst=model_dir)
 
     log, logclose = create_logger(log_filename=os.path.join(model_dir, 'train.log'))
+    wandb_logger = WandbLogger(
+        {}, logger_name='ProtoPNet', project='FinalProject')
     img_dir = os.path.join(model_dir, 'img')
     makedir(img_dir)
     weight_matrix_filename = 'outputL_weights'
@@ -145,15 +149,15 @@ def main():
         if epoch < num_warm_epochs:
             tnt.warm_only(model=ppnet_multi, log=log)
             _ = tnt.train(model=ppnet_multi, dataloader=train_loader, optimizer=warm_optimizer,
-                        class_specific=class_specific, coefs=coefs, log=log)
+                        class_specific=class_specific, coefs=coefs, log=log, wandb_logger=wandb_logger)
         else:
             tnt.joint(model=ppnet_multi, log=log)
             joint_lr_scheduler.step()
             _ = tnt.train(model=ppnet_multi, dataloader=train_loader, optimizer=joint_optimizer,
-                        class_specific=class_specific, coefs=coefs, log=log)
+                        class_specific=class_specific, coefs=coefs, log=log, wandb_logger=wandb_logger)
 
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
-                        class_specific=class_specific, log=log)
+                        class_specific=class_specific, log=log, wandb_logger=wandb_logger)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
                                     target_accu=0.70, log=log)
 
