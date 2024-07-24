@@ -2,24 +2,28 @@ base_architecture = 'vgg19'
 img_size = 224
 prototype_shape = (2000, 128, 1, 1)
 num_classes = 2
+# num_classes = 200
 prototype_activation_function = 'log'
 add_on_layers_type = 'regular'
 
-experiment_run = '001'
+import datetime
+experiment_run = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 import socket
 hostname = socket.gethostname()
 if hostname.endswith('local'):  # Example check for local machine names
     print("Running on Macbook locally")
     data_path = '/Users/youssefshaarawy/Documents/Datasets/JustRAIGS'
+    # data_path = '/Users/youssefshaarawy/Downloads/CUB_200_2011/CUB_200_2011/'
 else:
     print(f"Running on remote server: {hostname}")
     data_path = '/users/adfx751/Datasets/JustRAIGS'
+    # data_path = '/users/adfx751/Datasets/CUB_200_2011/'
 
 
-train_dir = data_path + 'train_cropped_augmented/'
-test_dir = data_path + 'test_cropped/'
-train_push_dir = data_path + 'train_cropped/'
+train_dir = data_path + 'train_augmented/'
+test_dir = data_path + 'test/'
+train_push_dir = data_path + 'train/'
 train_batch_size = 80
 test_batch_size = 100
 train_push_batch_size = 75
@@ -41,7 +45,7 @@ coefs = {
     'l1': 1e-4,
 }
 
-num_train_epochs = 1000
+num_train_epochs = 100
 num_warm_epochs = 5
 
 push_start = 10

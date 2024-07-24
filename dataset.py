@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import torch
 from torch.utils.data import Dataset
 import json
@@ -5,6 +6,7 @@ import os
 from PIL import Image
 import random
 import pandas as pd
+from tqdm import tqdm
 
 
 class JustRAIGSDataset(Dataset):
@@ -61,7 +63,7 @@ class JustRAIGSDataset(Dataset):
         return len(self.images)
 
 
-def prepare_data():
+def prepare_data(resize=None):
     data_folder = '/Users/youssefshaarawy/Documents/Datasets/JustRAIGS'
     folders = sorted([os.path.join(data_folder, x) for x in os.listdir(data_folder)
                      if os.path.isdir(os.path.join(data_folder, x))])
@@ -97,11 +99,32 @@ def prepare_data():
     print(len(true_images))
     print(len(false_images))
 
-    # with open(os.path.join(data_folder, 'train_images.json'), 'w') as j:
-    #     json.dump(train_paths, j)
-    # with open(os.path.join(data_folder, 'test_images.json'), 'w') as j:
-    #     json.dump(test_paths, j)
+    with open(os.path.join(data_folder, 'train_images.json'), 'w') as j:
+        json.dump(train_paths, j)
+    with open(os.path.join(data_folder, 'test_images.json'), 'w') as j:
+        json.dump(test_paths, j)
+
+    if resize:
+        def resize_image(img_path, resize):
+            try:
+                with Image.open(img_path) as im:
+                    im = im.resize((resize, resize))
+                    im.save(img_path)
+            except Exception as e:
+                print(f"Error processing {img_path}: {e}")
+
+        def process_folder(folder, resize):
+            images = [os.path.join(folder, img) for img in os.listdir(folder) if img.endswith((".jpg", ".JPG"))]
+            
+            with ThreadPoolExecutor() as executor:
+                list(tqdm(executor.map(lambda img: resize_image(img, resize), images), total=len(images), desc=f"Processing {folder}"))
+
+        def resize_images_in_folders(folders, resize):
+            for folder in folders:
+                process_folder(folder, resize)
+
+        resize_images_in_folders(folders, resize)
 
 
 if __name__ == '__main__':
-    prepare_data()
+    prepare_data(512)

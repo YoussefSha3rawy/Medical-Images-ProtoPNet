@@ -59,7 +59,6 @@ def main():
                                     std=std)
 
     # all datasets
-    # all datasets
     # Load Dataset
     train_dataset = JustRAIGSDataset(
         data_folder=data_path,
@@ -70,7 +69,7 @@ def main():
             normalize,
         ]))
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=train_batch_size, num_workers=4, shuffle=True, pin_memory=False)
+        train_dataset, batch_size=train_batch_size, num_workers=8, shuffle=True, pin_memory=False)
 
     test_dataset = JustRAIGSDataset(
         data_folder=data_path,
@@ -81,7 +80,7 @@ def main():
             normalize,
         ]))
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=test_batch_size, num_workers=4, shuffle=False, pin_memory=False)
+        test_dataset, batch_size=test_batch_size, num_workers=8, shuffle=False, pin_memory=False)
 
     # push set
     train_push_dataset = JustRAIGSDataset(
@@ -92,8 +91,40 @@ def main():
             transforms.ToTensor(),
         ]))
     train_push_loader = torch.utils.data.DataLoader(
-        train_push_dataset, batch_size=train_push_batch_size, num_workers=4, shuffle=False, pin_memory=False)
+        train_push_dataset, batch_size=train_push_batch_size, num_workers=8, shuffle=False, pin_memory=False)
 
+    # train_dataset = datasets.ImageFolder(
+    # train_dir,
+    # transforms.Compose([
+    #     transforms.Resize(size=(img_size, img_size)),
+    #     transforms.ToTensor(),
+    #     normalize,
+    # ]))
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_dataset, batch_size=train_batch_size, shuffle=True,
+    #     num_workers=8, pin_memory=False)
+    # # push set
+    # train_push_dataset = datasets.ImageFolder(
+    #     train_push_dir,
+    #     transforms.Compose([
+    #         transforms.Resize(size=(img_size, img_size)),
+    #         transforms.ToTensor(),
+    #     ]))
+    # train_push_loader = torch.utils.data.DataLoader(
+    #     train_push_dataset, batch_size=train_push_batch_size, shuffle=False,
+    #     num_workers=8, pin_memory=False)
+    # # test set
+    # test_dataset = datasets.ImageFolder(
+    #     test_dir,
+    #     transforms.Compose([
+    #         transforms.Resize(size=(img_size, img_size)),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]))
+    # test_loader = torch.utils.data.DataLoader(
+    #     test_dataset, batch_size=test_batch_size, shuffle=False,
+    #     num_workers=8, pin_memory=False)
+    
     # we should look into distributed sampler more carefully at torch.utils.data.distributed.DistributedSampler(train_dataset)
     log('training set size: {0}'.format(len(train_loader.dataset)))
     log('push set size: {0}'.format(len(train_push_loader.dataset)))
@@ -141,6 +172,7 @@ def main():
     from config import num_train_epochs, num_warm_epochs, push_start, push_epochs
 
     # train the model
+    max_accu = 0
     log('start training')
     import copy
     for epoch in range(num_train_epochs):
@@ -159,7 +191,8 @@ def main():
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                         class_specific=class_specific, log=log, wandb_logger=wandb_logger)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
-                                    target_accu=0.70, log=log)
+                                    target_accu=max(max_accu, 0.5), log=log)
+        max_accu = max(accu, max_accu)
 
         if epoch >= push_start and epoch in push_epochs:
             push.push_prototypes(
@@ -169,27 +202,29 @@ def main():
                 preprocess_input_function=preprocess_input_function, # normalize if needed
                 prototype_layer_stride=1,
                 root_dir_for_saving_prototypes=img_dir, # if not None, prototypes will be saved here
-                epoch_number=epoch, # if not provided, prototypes saved previously will be overwritten
+                epoch_number=None, # if not provided, prototypes saved previously will be overwritten
                 prototype_img_filename_prefix=prototype_img_filename_prefix,
                 prototype_self_act_filename_prefix=prototype_self_act_filename_prefix,
                 proto_bound_boxes_filename_prefix=proto_bound_boxes_filename_prefix,
                 save_prototype_class_identity=True,
                 log=log)
             accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
-                            class_specific=class_specific, log=log)
+                            class_specific=class_specific, log=log, wandb_logger=wandb_logger)
             save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'push', accu=accu,
-                                        target_accu=0.70, log=log)
+                                        target_accu=max(max_accu, 0.5), log=log)
+            max_accu = max(accu, max_accu)
 
             if prototype_activation_function != 'linear':
                 tnt.last_only(model=ppnet_multi, log=log)
                 for i in range(20):
                     log('iteration: \t{0}'.format(i))
                     _ = tnt.train(model=ppnet_multi, dataloader=train_loader, optimizer=last_layer_optimizer,
-                                class_specific=class_specific, coefs=coefs, log=log)
+                                class_specific=class_specific, coefs=coefs, log=log, wandb_logger=wandb_logger)
                     accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
-                                    class_specific=class_specific, log=log)
+                                    class_specific=class_specific, log=log, wandb_logger=wandb_logger)
                     save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
-                                                target_accu=0.70, log=log)
+                                                target_accu=max(max_accu, 0.5), log=log)
+                    max_accu = max(accu, max_accu)
     
     logclose()
 

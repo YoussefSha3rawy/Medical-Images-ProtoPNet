@@ -343,3 +343,4 @@ pyrightconfig.json
 ProtoPNet
 pretrained_models
 scripts
+wandb
