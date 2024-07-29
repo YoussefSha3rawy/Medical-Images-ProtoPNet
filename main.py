@@ -60,70 +60,71 @@ def main():
 
     # all datasets
     # Load Dataset
-    train_dataset = JustRAIGSDataset(
-        data_folder=data_path,
-        stage='train',
-        transforms=transforms.Compose([
-            transforms.Resize(size=(img_size, img_size)),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=train_batch_size, num_workers=8, shuffle=True, pin_memory=False)
-
-    test_dataset = JustRAIGSDataset(
-        data_folder=data_path,
-        stage='test',
-        transforms=transforms.Compose([
-            transforms.Resize(size=(img_size, img_size)),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=test_batch_size, num_workers=8, shuffle=False, pin_memory=False)
-
-    # push set
-    train_push_dataset = JustRAIGSDataset(
-        data_folder=data_path,
-        stage='train',
-        transforms=transforms.Compose([
-            transforms.Resize(size=(img_size, img_size)),
-            transforms.ToTensor(),
-        ]))
-    train_push_loader = torch.utils.data.DataLoader(
-        train_push_dataset, batch_size=train_push_batch_size, num_workers=8, shuffle=False, pin_memory=False)
-
-    # train_dataset = datasets.ImageFolder(
-    # train_dir,
-    # transforms.Compose([
-    #     transforms.Resize(size=(img_size, img_size)),
-    #     transforms.ToTensor(),
-    #     normalize,
-    # ]))
-    # train_loader = torch.utils.data.DataLoader(
-    #     train_dataset, batch_size=train_batch_size, shuffle=True,
-    #     num_workers=8, pin_memory=False)
-    # # push set
-    # train_push_dataset = datasets.ImageFolder(
-    #     train_push_dir,
-    #     transforms.Compose([
+    # train_dataset = JustRAIGSDataset(
+    #     data_folder=data_path,
+    #     stage='train',
+    #     transforms=transforms.Compose([
     #         transforms.Resize(size=(img_size, img_size)),
     #         transforms.ToTensor(),
+    #         normalize,
     #     ]))
-    # train_push_loader = torch.utils.data.DataLoader(
-    #     train_push_dataset, batch_size=train_push_batch_size, shuffle=False,
-    #     num_workers=8, pin_memory=False)
-    # # test set
-    # test_dataset = datasets.ImageFolder(
-    #     test_dir,
-    #     transforms.Compose([
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_dataset, batch_size=train_batch_size, num_workers=8, shuffle=True, pin_memory=False)
+
+    # test_dataset = JustRAIGSDataset(
+    #     data_folder=data_path,
+    #     stage='test',
+    #     transforms=transforms.Compose([
     #         transforms.Resize(size=(img_size, img_size)),
     #         transforms.ToTensor(),
     #         normalize,
     #     ]))
     # test_loader = torch.utils.data.DataLoader(
-    #     test_dataset, batch_size=test_batch_size, shuffle=False,
-    #     num_workers=8, pin_memory=False)
+    #     test_dataset, batch_size=test_batch_size, num_workers=8, shuffle=False, pin_memory=False)
+
+    # # push set
+    # train_push_dataset = JustRAIGSDataset(
+    #     data_folder=data_path,
+    #     stage='train',
+    #     transforms=transforms.Compose([
+    #         transforms.Resize(size=(img_size, img_size)),
+    #         transforms.ToTensor(),
+    #     ]))
+    # train_push_loader = torch.utils.data.DataLoader(
+    #     train_push_dataset, batch_size=train_push_batch_size, num_workers=8, shuffle=False, pin_memory=False)
+
+    train_dataset = datasets.ImageFolder(
+    train_dir,
+    transforms.Compose([
+        transforms.Resize(size=(img_size, img_size)),
+        transforms.ToTensor(),
+        normalize,
+    ]))
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=train_batch_size, shuffle=True,
+        num_workers=8, pin_memory=False)
+    # push set
+    train_push_dataset = datasets.ImageFolder(
+        train_push_dir,
+        transforms.Compose([
+            transforms.Resize(size=(img_size, img_size)),
+            transforms.ToTensor(),
+        ]))
+    train_push_loader = torch.utils.data.DataLoader(
+        train_push_dataset, batch_size=train_push_batch_size, shuffle=False,
+        num_workers=8, pin_memory=False)
+    # test set
+    test_dataset = datasets.ImageFolder(
+        test_dir,
+        transforms.Compose([
+            transforms.Resize(size=(img_size, img_size)),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset, batch_size=test_batch_size, shuffle=False,
+        num_workers=8, pin_memory=False)
+    
     
     # we should look into distributed sampler more carefully at torch.utils.data.distributed.DistributedSampler(train_dataset)
     log('training set size: {0}'.format(len(train_loader.dataset)))

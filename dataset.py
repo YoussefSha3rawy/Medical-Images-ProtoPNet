@@ -7,7 +7,7 @@ from PIL import Image
 import random
 import pandas as pd
 from tqdm import tqdm
-
+import shutil
 
 class JustRAIGSDataset(Dataset):
     """
@@ -63,7 +63,7 @@ class JustRAIGSDataset(Dataset):
         return len(self.images)
 
 
-def prepare_data(resize=None):
+def prepare_justraigs_data(resize=None):
     data_folder = '/Users/youssefshaarawy/Documents/Datasets/JustRAIGS'
     folders = sorted([os.path.join(data_folder, x) for x in os.listdir(data_folder)
                      if os.path.isdir(os.path.join(data_folder, x))])
@@ -125,6 +125,36 @@ def prepare_data(resize=None):
 
         resize_images_in_folders(folders, resize)
 
+def prepare_oct_data():
+    data_folder = '/Users/youssefshaarawy/Documents/Datasets/OCT2017'
+    train_folder = os.path.join(data_folder, 'train')
+    test_folder = os.path.join(data_folder, 'test')
+    val_folder = os.path.join(data_folder, 'val')
+    train_balanced_folder = os.path.join(data_folder, 'train_balanced')
 
+    os.makedirs(val_folder, exist_ok=True)
+    os.makedirs(train_balanced_folder, exist_ok=True)
+
+    val_class_size = 250
+    train_class_size = 11348 - val_class_size
+
+    for class_folder in os.listdir(train_folder):
+        class_images = os.listdir(os.path.join(train_folder, class_folder))
+        random.shuffle(class_images)
+        if len(class_images) > train_class_size:
+            train_images = class_images[:train_class_size]
+        else:
+            train_images = class_images[:-val_class_size]
+        val_images = class_images[-val_class_size:]
+
+        print(f"{class_folder}: {len(train_images)} train, {len(val_images)} val")
+
+        os.makedirs(os.path.join(train_balanced_folder, class_folder), exist_ok=True)
+        os.makedirs(os.path.join(val_folder, class_folder), exist_ok=True)
+        for img in train_images:
+            shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(train_balanced_folder, class_folder, img))
+        for img in val_images:
+            shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(val_folder, class_folder, img))
 if __name__ == '__main__':
-    prepare_data(512)
+    # prepare_justraigs_data(512)
+    prepare_oct_data()

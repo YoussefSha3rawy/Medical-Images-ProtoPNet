@@ -344,3 +344,4 @@ ProtoPNet
 pretrained_models
 scripts
 wandb
+saved_models
