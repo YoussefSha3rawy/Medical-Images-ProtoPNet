@@ -1,7 +1,7 @@
-base_architecture = 'vgg19'
+base_architecture = 'densenet121'
 img_size = 224
-prototype_shape = (2000, 128, 1, 1)
 num_classes = 4
+prototype_shape = (num_classes * 10, 128, 1, 1)
 # num_classes = 2
 # num_classes = 200
 prototype_activation_function = 'log'
@@ -25,7 +25,7 @@ else:
 
 
 train_dir = data_path + 'train_balanced'
-test_dir = data_path + 'test/'
+test_dir = data_path + 'val/'
 train_push_dir = data_path + 'train_balanced/'
 train_batch_size = 80
 test_batch_size = 100
