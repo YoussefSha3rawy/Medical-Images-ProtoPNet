@@ -37,9 +37,9 @@ def main():
     makedir(model_dir)
     shutil.copy(src=os.path.join(os.getcwd(), __file__), dst=model_dir)
     shutil.copy(src=os.path.join(os.getcwd(), 'config.py'), dst=model_dir)
-    shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', base_architecture_type + '_features.py'), dst=model_dir)
-    shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', 'model.py'), dst=model_dir)
-    shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', 'train_and_test.py'), dst=model_dir)
+    # shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', base_architecture_type + '_features.py'), dst=model_dir)
+    # shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', 'model.py'), dst=model_dir)
+    # shutil.copy(src=os.path.join(os.getcwd(), 'ProtoPNet', 'train_and_test.py'), dst=model_dir)
 
     log, logclose = create_logger(log_filename=os.path.join(model_dir, 'train.log'))
     wandb_logger = WandbLogger(
@@ -52,7 +52,7 @@ def main():
     proto_bound_boxes_filename_prefix = 'bb'
 
     # load the data
-    from config import data_path, train_dir, test_dir, train_push_dir, \
+    from config import data_path, train_dir, val_dir, train_push_dir, \
                         train_batch_size, test_batch_size, train_push_batch_size
     from dataset import JustRAIGSDataset
     normalize = transforms.Normalize(mean=mean,
@@ -115,7 +115,7 @@ def main():
         num_workers=8, pin_memory=False)
     # test set
     test_dataset = datasets.ImageFolder(
-        test_dir,
+        val_dir,
         transforms.Compose([
             transforms.Resize(size=(img_size, img_size)),
             transforms.ToTensor(),

@@ -25,7 +25,8 @@ else:
 
 
 train_dir = data_path + 'train_balanced'
-test_dir = data_path + 'val/'
+val_dir = data_path + 'val/'
+test_dir = data_path + 'test/'
 train_push_dir = data_path + 'train_balanced/'
 train_batch_size = 80
 test_batch_size = 100

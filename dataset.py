@@ -132,22 +132,30 @@ def prepare_oct_data():
     val_folder = os.path.join(data_folder, 'val')
     train_balanced_folder = os.path.join(data_folder, 'train_balanced')
 
-    os.makedirs(val_folder, exist_ok=True)
-    os.makedirs(train_balanced_folder, exist_ok=True)
+    if os.path.exists(val_folder):
+        shutil.rmtree(val_folder)
+    if os.path.exists(train_balanced_folder):
+        shutil.rmtree(train_balanced_folder)
+    os.makedirs(val_folder)
+    os.makedirs(train_balanced_folder)
 
     val_class_size = 250
-    train_class_size = 11348 - val_class_size
+    extra_test_images_size = 250
+    train_class_size = 11348 - val_class_size - extra_test_images_size
 
     for class_folder in os.listdir(train_folder):
-        class_images = os.listdir(os.path.join(train_folder, class_folder))
+        if not os.path.isdir(os.path.join(train_folder, class_folder)):
+            continue
+        class_images = [folder for folder in os.listdir(os.path.join(train_folder, class_folder))]
         random.shuffle(class_images)
         if len(class_images) > train_class_size:
             train_images = class_images[:train_class_size]
         else:
-            train_images = class_images[:-val_class_size]
-        val_images = class_images[-val_class_size:]
+            train_images = class_images[:-(val_class_size + extra_test_images_size)]
+        val_images = class_images[-(val_class_size + extra_test_images_size):-extra_test_images_size]
+        extra_test_images = class_images[-extra_test_images_size:]
 
-        print(f"{class_folder}: {len(train_images)} train, {len(val_images)} val")
+        print(f"{class_folder}: {len(train_images)} train, {len(val_images)} val, {len(extra_test_images) + len(os.listdir(os.path.join(test_folder, class_folder)))} test")
 
         os.makedirs(os.path.join(train_balanced_folder, class_folder), exist_ok=True)
         os.makedirs(os.path.join(val_folder, class_folder), exist_ok=True)
@@ -155,6 +163,8 @@ def prepare_oct_data():
             shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(train_balanced_folder, class_folder, img))
         for img in val_images:
             shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(val_folder, class_folder, img))
+        for img in extra_test_images:
+            shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(test_folder, class_folder, img))
 if __name__ == '__main__':
     # prepare_justraigs_data(512)
     prepare_oct_data()
