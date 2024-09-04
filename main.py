@@ -11,10 +11,10 @@ import argparse
 import re
 
 from ProtoPNet.helpers import makedir
-from ProtoPNet import model, push, prune, train_and_test as tnt, save
+from ProtoPNet import model, push, prune, save
 from ProtoPNet.log import create_logger
 from ProtoPNet.preprocess import mean, std, preprocess_input_function
-
+import train_and_test_modified as tnt
 from logger import WandbLogger
 
 def main():
@@ -33,7 +33,23 @@ def main():
 
     base_architecture_type = re.match('^[a-z]*', base_architecture).group(0)
 
-    model_dir = './saved_models/' + base_architecture + '/' + experiment_run + '/'
+    runs_dir = './saved_models/' + base_architecture + '/'
+    makedir(runs_dir)
+
+    if not experiment_run:
+        latest_run = 0
+        for dir in os.listdir(runs_dir):
+            dir_path = os.path.join(runs_dir, dir)
+            if os.path.isdir(dir_path):
+                try:
+                    dir_int = int(dir)
+                    if dir_int > latest_run:
+                        latest_run = dir_int
+                except ValueError:
+                    continue
+
+        experiment_run = f'{latest_run + 1}'
+    model_dir = runs_dir + experiment_run + '/'
     makedir(model_dir)
     shutil.copy(src=os.path.join(os.getcwd(), __file__), dst=model_dir)
     shutil.copy(src=os.path.join(os.getcwd(), 'config.py'), dst=model_dir)
@@ -93,13 +109,25 @@ def main():
     # train_push_loader = torch.utils.data.DataLoader(
     #     train_push_dataset, batch_size=train_push_batch_size, num_workers=8, shuffle=False, pin_memory=False)
 
-    train_dataset = datasets.ImageFolder(
-    train_dir,
-    transforms.Compose([
-        transforms.Resize(size=(img_size, img_size)),
-        transforms.ToTensor(),
-        normalize,
-    ]))
+    if 'augmented' not in train_dir:
+        print("Using online augmentation")
+        train_dataset = datasets.ImageFolder(
+            train_dir,
+            transforms.Compose([
+                transforms.RandomAffine(degrees=(-25, 25), shear=15),
+                transforms.RandomHorizontalFlip(),
+                transforms.Resize(size=(img_size, img_size)),
+                transforms.ToTensor(),
+                normalize,
+            ]))
+    else:
+        train_dataset = datasets.ImageFolder(
+            train_dir,
+            transforms.Compose([
+                transforms.Resize(size=(img_size, img_size)),
+                transforms.ToTensor(),
+                normalize,
+            ]))
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=train_batch_size, shuffle=True,
         num_workers=8, pin_memory=False)
@@ -203,7 +231,7 @@ def main():
                 preprocess_input_function=preprocess_input_function, # normalize if needed
                 prototype_layer_stride=1,
                 root_dir_for_saving_prototypes=img_dir, # if not None, prototypes will be saved here
-                epoch_number=None, # if not provided, prototypes saved previously will be overwritten
+                epoch_number=epoch, # if not provided, prototypes saved previously will be overwritten
                 prototype_img_filename_prefix=prototype_img_filename_prefix,
                 prototype_self_act_filename_prefix=prototype_self_act_filename_prefix,
                 proto_bound_boxes_filename_prefix=proto_bound_boxes_filename_prefix,

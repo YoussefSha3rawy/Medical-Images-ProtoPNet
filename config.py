@@ -7,8 +7,7 @@ prototype_shape = (num_classes * 10, 128, 1, 1)
 prototype_activation_function = 'log'
 add_on_layers_type = 'regular'
 
-import datetime
-experiment_run = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+experiment_run = None
 
 import socket
 hostname = socket.gethostname()
@@ -26,7 +25,7 @@ else:
 
 train_dir = data_path + 'train_balanced'
 val_dir = data_path + 'val/'
-test_dir = data_path + 'test/'
+test_dir = data_path + 'test_upsampled/'
 train_push_dir = data_path + 'train_balanced/'
 train_batch_size = 80
 test_batch_size = 100

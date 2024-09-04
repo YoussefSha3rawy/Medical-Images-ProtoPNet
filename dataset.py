@@ -131,40 +131,48 @@ def prepare_oct_data():
     test_folder = os.path.join(data_folder, 'test')
     val_folder = os.path.join(data_folder, 'val')
     train_balanced_folder = os.path.join(data_folder, 'train_balanced')
+    new_test_folder = os.path.join(data_folder, 'test_upsampled')
 
     if os.path.exists(val_folder):
         shutil.rmtree(val_folder)
     if os.path.exists(train_balanced_folder):
         shutil.rmtree(train_balanced_folder)
+    if os.path.exists(new_test_folder):
+        shutil.rmtree(new_test_folder)
     os.makedirs(val_folder)
     os.makedirs(train_balanced_folder)
+    os.makedirs(new_test_folder)
 
     val_class_size = 250
     extra_test_images_size = 250
     train_class_size = 11348 - val_class_size - extra_test_images_size
 
-    for class_folder in os.listdir(train_folder):
+    for class_folder in tqdm(os.listdir(train_folder)):
         if not os.path.isdir(os.path.join(train_folder, class_folder)):
             continue
         class_images = [folder for folder in os.listdir(os.path.join(train_folder, class_folder))]
         random.shuffle(class_images)
-        if len(class_images) > train_class_size:
+        num_class_images = len(class_images)
+        extra_test_images = class_images[-extra_test_images_size:]
+        val_images = class_images[-(val_class_size + extra_test_images_size):-extra_test_images_size]
+        if num_class_images > train_class_size:
             train_images = class_images[:train_class_size]
         else:
             train_images = class_images[:-(val_class_size + extra_test_images_size)]
-        val_images = class_images[-(val_class_size + extra_test_images_size):-extra_test_images_size]
-        extra_test_images = class_images[-extra_test_images_size:]
 
         print(f"{class_folder}: {len(train_images)} train, {len(val_images)} val, {len(extra_test_images) + len(os.listdir(os.path.join(test_folder, class_folder)))} test")
 
         os.makedirs(os.path.join(train_balanced_folder, class_folder), exist_ok=True)
         os.makedirs(os.path.join(val_folder, class_folder), exist_ok=True)
+        os.makedirs(os.path.join(new_test_folder, class_folder), exist_ok=True)
         for img in train_images:
             shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(train_balanced_folder, class_folder, img))
         for img in val_images:
             shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(val_folder, class_folder, img))
         for img in extra_test_images:
-            shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(test_folder, class_folder, img))
+            shutil.copy(os.path.join(train_folder, class_folder, img), os.path.join(new_test_folder, class_folder, img))
+        for img in os.listdir(os.path.join(test_folder, class_folder)):
+            shutil.copy(os.path.join(test_folder, class_folder, img), os.path.join(new_test_folder, class_folder, os.path.splitext(img)[0]+'_train.jpg'))
 if __name__ == '__main__':
     # prepare_justraigs_data(512)
     prepare_oct_data()

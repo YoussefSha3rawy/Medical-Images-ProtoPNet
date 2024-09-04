@@ -5,9 +5,9 @@ import numpy as np
 class WandbLogger:
     step = 0
 
-    def __init__(self, config, logger_name='logger', project='inm706'):
+    def __init__(self, config, logger_name='logger', project='inm706', **kwargs):
         logger_name = f'{logger_name}-{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
-        logger = wandb.init(project=project, name=logger_name, config=config)
+        logger = wandb.init(project=project, name=logger_name, config=config, **kwargs)
         self.logger = logger
 
     def log(self, data):
