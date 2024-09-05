@@ -16,9 +16,10 @@ import os
 import copy
 
 from ProtoPNet.helpers import makedir, find_high_activation_crop
-from ProtoPNet import model, push, train_and_test as tnt, save
+from ProtoPNet import model, push, save
 from ProtoPNet.log import create_logger
 from ProtoPNet.preprocess import mean, std, preprocess_input_function, undo_preprocess_input_function
+import train_and_test_modified as tnt
 
 import argparse
 from logger import WandbLogger
@@ -43,8 +44,8 @@ def main():
     # load the model
     check_test_accu = True
 
-    load_model_dir = './saved_models/densenet121/2024-08-20_14-35-35/' #'./saved_models/vgg19/003/'
-    load_model_name = '15nopush0.9510.pth' #'10_18push0.7822.pth'
+    load_model_dir = './saved_models/densenet121/3/' #'./saved_models/vgg19/003/'
+    load_model_name = '40_17push0.9640.pth' #'10_18push0.7822.pth'
 
     #if load_model_dir[-1] == '/':
     #    model_base_architecture = load_model_dir.split('/')[-3]
@@ -110,7 +111,7 @@ def main():
     # confirm prototype class identity
     load_img_dir = os.path.join(load_model_dir, 'img')
 
-    prototype_info = np.load(os.path.join(load_img_dir, 'bbNone'+'.npy'))
+    prototype_info = np.load(os.path.join(load_img_dir, 'epoch-'+epoch_number_str, 'bb'+epoch_number_str+'.npy'))
     prototype_img_identity = prototype_info[:, -1]
 
     log('Prototypes are chosen from ' + str(len(set(prototype_img_identity))) + ' number of classes.')
@@ -137,12 +138,12 @@ def main():
         return undo_preprocessed_img
 
     def save_prototype(fname, epoch, index):
-        p_img = plt.imread(os.path.join(load_img_dir, 'prototype-img'+str(index)+'.png'))
+        p_img = plt.imread(os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img'+str(index)+'.png'))
         #plt.axis('off')
         plt.imsave(fname, p_img)
         
     def save_prototype_self_activation(fname, epoch, index):
-        p_img = plt.imread(os.path.join(load_img_dir,
+        p_img = plt.imread(os.path.join(load_img_dir, 'epoch-'+str(epoch),
                                         'prototype-img-original_with_self_act'+str(index)+'.png'))
         #plt.axis('off')
         plt.imsave(fname, p_img)
@@ -150,7 +151,7 @@ def main():
     def save_prototype_original_img_with_bbox(fname, epoch, index,
                                             bbox_height_start, bbox_height_end,
                                             bbox_width_start, bbox_width_end, color=(0, 255, 255)):
-        p_img_bgr = cv2.imread(os.path.join(load_img_dir, 'prototype-img-original'+str(index)+'.png'))
+        p_img_bgr = cv2.imread(os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-original'+str(index)+'.png'))
         cv2.rectangle(p_img_bgr, (bbox_width_start, bbox_height_start), (bbox_width_end-1, bbox_height_end-1),
                     color, thickness=2)
         p_img_rgb = p_img_bgr[...,::-1]
