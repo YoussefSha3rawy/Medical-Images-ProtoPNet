@@ -201,7 +201,6 @@ def main():
     from config import num_train_epochs, num_warm_epochs, push_start, push_epochs
 
     # train the model
-    max_accu = 0
     log('start training')
     import copy
     for epoch in range(num_train_epochs):
@@ -220,8 +219,7 @@ def main():
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                         class_specific=class_specific, log=log, wandb_logger=wandb_logger)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
-                                    target_accu=max(max_accu, 0.5), log=log)
-        max_accu = max(accu, max_accu)
+                                    target_accu=0.5, log=log)
 
         if epoch >= push_start and epoch in push_epochs:
             push.push_prototypes(
@@ -240,8 +238,7 @@ def main():
             accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                             class_specific=class_specific, log=log, wandb_logger=wandb_logger)
             save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'push', accu=accu,
-                                        target_accu=max(max_accu, 0.5), log=log)
-            max_accu = max(accu, max_accu)
+                                        target_accu=0.5, log=log)
 
             if prototype_activation_function != 'linear':
                 tnt.last_only(model=ppnet_multi, log=log)
@@ -252,8 +249,7 @@ def main():
                     accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                                     class_specific=class_specific, log=log, wandb_logger=wandb_logger)
                     save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
-                                                target_accu=max(max_accu, 0.5), log=log)
-                    max_accu = max(accu, max_accu)
+                                                target_accu=0.5, log=log)
     
     logclose()
 
