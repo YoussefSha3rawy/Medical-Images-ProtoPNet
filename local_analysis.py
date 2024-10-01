@@ -1,4 +1,4 @@
-##### MODEL AND DATA LOADING
+# MODEL AND DATA LOADING
 import datetime
 import torch
 import torch.utils.data
@@ -20,40 +20,19 @@ from ProtoPNet.log import create_logger
 from ProtoPNet.preprocess import mean, std, undo_preprocess_input_function
 import train_eval as train_eval
 
-import argparse
 from logger import WandbLogger
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-gpuid', nargs=1, type=str, default='0')
-    args = parser.parse_args()
-
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid[0]
-
     device = 'cuda' if torch.cuda.is_available(
     ) else 'mps' if torch.backends.mps.is_available() else 'cpu'
     print(f'device: {device}')
 
-    # specify the test image to be analyzed
-    test_image_dir = './test_images/'  #'./local_analysis/Painted_Bunting_Class15_0081/'
-    test_image_name = 'DME-15208-1.jpeg'  #'Painted_Bunting_0081_15230.jpg'
-    test_image_label = 1  #15
+    # specify the test image dir to be analyzed
+    test_image_dir = './test_images/'
 
-    test_image_path = os.path.join(test_image_dir, test_image_name)
-
-    # load the model
-    check_test_accu = True
-
-    load_model_dir = './saved_models/densenet121/3/'  #'./saved_models/vgg19/003/'
-    load_model_name = '40_17push0.9640.pth'  #'10_18push0.7822.pth'
-
-    #if load_model_dir[-1] == '/':
-    #    model_base_architecture = load_model_dir.split('/')[-3]
-    #    experiment_run = load_model_dir.split('/')[-2]
-    #else:
-    #    model_base_architecture = load_model_dir.split('/')[-2]
-    #    experiment_run = load_model_dir.split('/')[-1]
+    load_model_dir = './saved_models/densenet121/3/'  # './saved_models/vgg19/003/'
+    load_model_name = '40_17push0.9640.pth'  # '10_18push0.7822.pth'
 
     model_base_architecture = load_model_dir.split('/')[-2]
     experiment_run = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -90,32 +69,31 @@ def main():
 
     # load the test data and check test accuracy
     from config import test_dir
-    if check_test_accu:
-        test_batch_size = 100
+    test_batch_size = 100
 
-        test_dataset = datasets.ImageFolder(
-            test_dir,
-            transforms.Compose([
-                transforms.Resize(size=(img_size, img_size)),
-                transforms.Lambda(lambda img: img.convert("RGB")),
-                transforms.ToTensor(),
-                normalize,
-            ]))
-        test_loader = torch.utils.data.DataLoader(test_dataset,
-                                                  batch_size=test_batch_size,
-                                                  shuffle=True,
-                                                  num_workers=8,
-                                                  pin_memory=False)
-        log('test set size: {0}'.format(len(test_loader.dataset)))
-        log(str(test_dataset.class_to_idx))
+    test_dataset = datasets.ImageFolder(
+        test_dir,
+        transforms.Compose([
+            transforms.Resize(size=(img_size, img_size)),
+            transforms.Lambda(lambda img: img.convert("RGB")),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    test_loader = torch.utils.data.DataLoader(test_dataset,
+                                              batch_size=test_batch_size,
+                                              shuffle=True,
+                                              num_workers=8,
+                                              pin_memory=False)
+    log('test set size: {0}'.format(len(test_loader.dataset)))
+    log(str(test_dataset.class_to_idx))
 
-        accu = train_eval.test(model=ppnet_multi,
-                               dataloader=test_loader,
-                               class_specific=class_specific,
-                               log=log,
-                               wandb_logger=wandb_logger)
+    accu = train_eval.test(model=ppnet_multi,
+                           dataloader=test_loader,
+                           class_specific=class_specific,
+                           log=log,
+                           wandb_logger=wandb_logger)
+    log('test accuracy: {0}'.format(accu))
 
-    ##### SANITY CHECK
     # confirm prototype class identity
     load_img_dir = os.path.join(load_model_dir, 'img')
 
@@ -139,7 +117,7 @@ def main():
         log('WARNING: Not all prototypes connect most strongly to their respective classes.'
             )
 
-    ##### HELPER FUNCTIONS FOR PLOTTING
+    # HELPER FUNCTIONS FOR PLOTTING
     def save_preprocessed_img(fname, preprocessed_imgs, index=0):
         img_copy = copy.deepcopy(preprocessed_imgs[index:index + 1])
         undo_preprocessed_img = undo_preprocess_input_function(img_copy)
@@ -155,7 +133,7 @@ def main():
         p_img = plt.imread(
             os.path.join(load_img_dir, 'epoch-' + str(epoch),
                          'prototype-img' + str(index) + '.png'))
-        #plt.axis('off')
+        # plt.axis('off')
         plt.imsave(fname, p_img)
 
     def save_prototype_self_activation(fname, epoch, index):
@@ -163,7 +141,7 @@ def main():
             os.path.join(
                 load_img_dir, 'epoch-' + str(epoch),
                 'prototype-img-original_with_self_act' + str(index) + '.png'))
-        #plt.axis('off')
+        # plt.axis('off')
         plt.imsave(fname, p_img)
 
     def save_prototype_original_img_with_bbox(fname,
@@ -183,8 +161,8 @@ def main():
                       thickness=2)
         p_img_rgb = p_img_bgr[..., ::-1]
         p_img_rgb = np.float32(p_img_rgb) / 255
-        #plt.imshow(p_img_rgb)
-        #plt.axis('off')
+        # plt.imshow(p_img_rgb)
+        # plt.axis('off')
         plt.imsave(fname, p_img_rgb)
 
     def imsave_with_bbox(fname,
@@ -202,8 +180,8 @@ def main():
                       thickness=2)
         img_rgb_uint8 = img_bgr_uint8[..., ::-1]
         img_rgb_float = np.float32(img_rgb_uint8) / 255
-        #plt.imshow(img_rgb_float)
-        #plt.axis('off')
+        # plt.imshow(img_rgb_float)
+        # plt.axis('off')
         plt.imsave(fname, img_rgb_float)
 
     # load the test image and forward it through the network
@@ -255,7 +233,7 @@ def main():
             os.path.join(save_analysis_path, 'original_img.png'), images_test,
             idx)
 
-        ##### MOST ACTIVATED (NEAREST) 10 PROTOTYPES OF THIS IMAGE
+        # MOST ACTIVATED (NEAREST) 10 PROTOTYPES OF THIS IMAGE
         makedir(os.path.join(save_analysis_path, 'most_activated_prototypes'))
 
         log('Most activated 10 prototypes of this image:')
@@ -313,7 +291,7 @@ def main():
                 high_act_patch_indices[2]:high_act_patch_indices[3], :]
             log('most highly activated patch of the chosen image by this prototype:'
                 )
-            #plt.axis('off')
+            # plt.axis('off')
             plt.imsave(
                 os.path.join(
                     save_analysis_path, 'most_activated_prototypes',
@@ -343,7 +321,7 @@ def main():
             heatmap = heatmap[..., ::-1]
             overlayed_img = 0.5 * original_img + 0.3 * heatmap
             log('prototype activation map of the chosen image:')
-            #plt.axis('off')
+            # plt.axis('off')
             plt.imsave(
                 os.path.join(
                     save_analysis_path, 'most_activated_prototypes',
@@ -352,7 +330,7 @@ def main():
             log('--------------------------------------------------------------'
                 )
 
-        ##### PROTOTYPES FROM TOP-k CLASSES
+        # PROTOTYPES FROM TOP-k CLASSES
         k = 0
         log('Prototypes from top-%d classes:' % k)
         topk_logits, topk_classes = torch.topk(logits[idx], k=k)
@@ -425,7 +403,7 @@ def main():
                     high_act_patch_indices[2]:high_act_patch_indices[3], :]
                 log('most highly activated patch of the chosen image by this prototype:'
                     )
-                #plt.axis('off')
+                # plt.axis('off')
                 plt.imsave(
                     os.path.join(
                         save_analysis_path,
@@ -457,7 +435,7 @@ def main():
                 heatmap = heatmap[..., ::-1]
                 overlayed_img = 0.5 * original_img + 0.3 * heatmap
                 log('prototype activation map of the chosen image:')
-                #plt.axis('off')
+                # plt.axis('off')
                 plt.imsave(
                     os.path.join(
                         save_analysis_path,
