@@ -25,3 +25,16 @@ You can install the required dependencies using:
 git clone https://github.com/cfchen-duke/ProtoPNet
 pip install -r requirements.txt
 ```
+
+## Training
+
+```bash
+python main.py
+```
+
+
+## Evaluation
+
+```bash
+python local_analysis.py
+```
